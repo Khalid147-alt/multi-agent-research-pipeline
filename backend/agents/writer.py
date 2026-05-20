@@ -8,13 +8,15 @@ def build_writer() -> Agent:
     return Agent(
         role="Technical Writer",
         goal=(
-            "Produce final research report: executive summary, 3-5 titled sections "
-            "with inline citations [Source: URL], confidence % per section, "
-            "flagged claims appendix. Also generate HTML version for PDF export."
+            "Produce a strict-markdown research report: ## Executive Summary, "
+            "3-5 ## sections each ending with `Confidence: NN%`, optional "
+            "## Flagged Claims, and a final ## Sources numbered URL list. "
+            "Plain markdown only — never emit HTML tags or code fences."
         ),
         backstory=(
-            "Senior technical writer for business audiences. "
-            "Always cite sources inline. Label confidence clearly. Plain English."
+            "Senior technical writer for business audiences. Writes plain markdown "
+            "with `##` headings, inline `[1]` citations, and explicit per-section "
+            "confidence scores. Never wraps output in HTML or code blocks."
         ),
         tools=[PDFGeneratorTool()],
         llm=get_gemini_llm(),
