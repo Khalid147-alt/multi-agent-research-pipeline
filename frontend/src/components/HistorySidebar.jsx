@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { getHistory } from "../lib/api"
 
-export default function HistorySidebar({ onSelect, refreshKey }) {
+export default function HistorySidebar({ onSelect, refreshKey, embedded = false }) {
   const [items, setItems] = useState([])
 
   useEffect(() => {
@@ -10,20 +10,26 @@ export default function HistorySidebar({ onSelect, refreshKey }) {
       .catch(() => setItems([]))
   }, [refreshKey])
 
+  const wrapperClass = embedded
+    ? ""
+    : "bg-panel border border-edge rounded-xl p-4 h-fit sticky top-4"
+
   return (
-    <aside className="bg-panel border border-edge rounded-xl p-4 h-fit sticky top-4">
-      <div className="text-xs uppercase tracking-wider text-muted mb-3">
-        Recent research
-      </div>
+    <aside className={wrapperClass}>
+      {!embedded && (
+        <div className="text-xs uppercase tracking-wider text-muted mb-3">
+          Recent research
+        </div>
+      )}
       {items.length === 0 ? (
         <div className="text-sm text-muted italic">No sessions yet.</div>
       ) : (
         <ul className="space-y-1">
-          {items.slice(0, 10).map((s) => (
+          {items.slice(0, 20).map((s) => (
             <li key={s.id}>
               <button
                 onClick={() => onSelect?.(s.id)}
-                className="w-full text-left text-sm px-2 py-1.5 rounded hover:bg-edge truncate"
+                className="w-full text-left text-sm px-2 py-2 rounded hover:bg-edge truncate min-h-[44px] flex items-center gap-2"
                 title={s.topic}
               >
                 <span
@@ -36,8 +42,8 @@ export default function HistorySidebar({ onSelect, refreshKey }) {
                   }
                 >
                   ●
-                </span>{" "}
-                {s.topic}
+                </span>
+                <span className="truncate">{s.topic}</span>
               </button>
             </li>
           ))}

@@ -28,6 +28,10 @@ export async function getReport(sessionId) {
   return res.json()
 }
 
+// Alias for routes that load a historic report by id — same endpoint,
+// readable name at the call site.
+export const getReportById = getReport
+
 export async function getHistory() {
   const res = await fetch(`${BASE}/history`)
   if (!res.ok) return []
