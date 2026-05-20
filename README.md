@@ -6,6 +6,12 @@ A production-grade multi-agent research system. Submit a topic, and four CrewAI 
 - Frontend: https://research-pipeline-eta.vercel.app
 - Backend:  https://khalid147-research-pipeline-backend.hf.space
 
+![Demo](docs/demo.gif)
+
+> _The GIF above shows a research run from topic submission through the live
+> agent dashboard to the final PDF download. If you're seeing a broken image,
+> the demo capture is still being recorded — try the live demo instead._
+
 ---
 
 ## What it does
@@ -18,7 +24,8 @@ A production-grade multi-agent research system. Submit a topic, and four CrewAI 
    - **Writer** — synthesizes the verified material into a cited markdown report.
 3. Each agent step (`agent_start`, `tool_use`, `tool_result`, `agent_finish`) is pushed over a WebSocket so the dashboard renders progress live.
 4. The finished report is persisted, viewable in-app with a confidence chart, and exportable as a PDF.
-5. Past sessions are listed in the history sidebar and can be reopened.
+5. Past sessions are listed in the history sidebar and can be reopened via deep-link (`/report/:id`).
+6. Each report has share buttons for LinkedIn / X / Facebook / WhatsApp / Email with pre-written captions that link back to the deep-linked report.
 
 ---
 
@@ -152,6 +159,24 @@ multi-agents-system/
 ```
 
 See [`AGENTS.md`](AGENTS.md) for full architecture notes, conventions, and the project's session log.
+See [`docs/architecture.md`](docs/architecture.md) for diagrams of the request lifecycle and component topology.
+
+---
+
+## Security
+
+This is a public demo with no authentication, so security focuses on
+limiting abuse and protecting the surface area:
+
+- **Input validation**: research topics are length-bounded (5–300 chars) and stripped of control / HTML-bracket characters before they reach the LLM.
+- **CORS lockdown**: only the production Vercel origin and localhost are allowed (`ALLOWED_ORIGINS` env).
+- **Security headers**: HSTS, `X-Content-Type-Options`, `X-Frame-Options: DENY`, strict CSP and Referrer-Policy on every response.
+- **Rate limiting**: `slowapi` per-IP — 5 research runs / 15 min, 60 reads / min.
+- **WebSocket session binding**: WS subscriptions are bound to a known session id (must exist in DB, ≤ 60 min old); unknown / expired ids are closed with code 4404.
+- **Secret hygiene**: API keys come from env via `pydantic-settings`; startup fails fast if they look like placeholders.
+- **PDF rendering**: markdown → HTML through `markdown-it-py` with HTML disabled, then a fixed CSS — no user HTML reaches WeasyPrint.
+
+Full policy and reporting instructions: [`SECURITY.md`](SECURITY.md).
 
 ---
 
