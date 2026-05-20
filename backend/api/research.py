@@ -1,14 +1,17 @@
+import asyncio
 import html
 import io
+import logging
 import uuid
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from crew.research_crew import run_research
-from db.adapter import get_pool
+from db.adapter import USE_SQLITE, get_pool
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -16,8 +19,30 @@ class ResearchRequest(BaseModel):
     topic: str
 
 
+async def _safe_run_research(session_id: str, topic: str):
+    """
+    Outer safety net for the background task. `run_research` already has its
+    own try/except, but if anything escapes it (cancellation, import error,
+    OOM signal handler, etc.), at least guarantee the session row is marked
+    'failed' so /history doesn't show it stuck on 'running' forever.
+    """
+    try:
+        await run_research(session_id, topic)
+    except BaseException as e:  # noqa: BLE001 — includes CancelledError
+        logger.exception("Background research task failed for %s: %s", session_id, e)
+        try:
+            pool = get_pool()
+            async with pool.acquire() as conn:
+                await conn.execute(
+                    "UPDATE sessions SET status='failed' WHERE id=$1 AND status='running'",
+                    session_id,
+                )
+        except Exception:
+            logger.exception("Could not mark session %s as failed", session_id)
+
+
 @router.post("/research")
-async def start_research(req: ResearchRequest, background_tasks: BackgroundTasks):
+async def start_research(req: ResearchRequest):
     session_id = str(uuid.uuid4())
     pool = get_pool()
     async with pool.acquire() as conn:
@@ -26,7 +51,10 @@ async def start_research(req: ResearchRequest, background_tasks: BackgroundTasks
             session_id,
             req.topic,
         )
-    background_tasks.add_task(run_research, session_id, req.topic)
+    # Fire-and-forget. asyncio.create_task is decoupled from the request
+    # lifecycle, unlike FastAPI BackgroundTasks which can be killed when
+    # the response is sent on some uvicorn/HF setups.
+    asyncio.create_task(_safe_run_research(session_id, req.topic))
     return {"session_id": session_id, "status": "started"}
 
 
@@ -38,7 +66,13 @@ async def get_report(session_id: str):
             "SELECT * FROM reports WHERE session_id=$1", session_id
         )
     if not row:
-        return {"status": "pending"}
+        # Surface session status so the UI can show "failed" instead of
+        # spinning forever waiting for a report that will never appear.
+        async with pool.acquire() as conn:
+            sess = await conn.fetchrow(
+                "SELECT status FROM sessions WHERE id=$1", session_id
+            )
+        return {"status": (sess and sess["status"]) or "pending"}
     return {
         "status": "complete",
         "content": row["content"],
@@ -96,10 +130,31 @@ async def get_report_pdf(session_id: str):
     )
 
 
+# Stuck-session reaper: if a session has been 'running' for >15 min, the
+# worker is dead (HF cold-start kill, OOM, uncaught error). Mark it failed
+# so /history doesn't show stale rows. Runs lazily on every /history fetch
+# — no separate background job to manage.
+_STUCK_SQL_SQLITE = (
+    "UPDATE sessions SET status='failed' "
+    "WHERE status='running' "
+    "AND datetime(created_at) < datetime('now', '-15 minutes')"
+)
+_STUCK_SQL_PG = (
+    "UPDATE sessions SET status='failed' "
+    "WHERE status='running' "
+    "AND created_at < NOW() - INTERVAL '15 minutes'"
+)
+
+
 @router.get("/history")
 async def get_history():
     pool = get_pool()
     async with pool.acquire() as conn:
+        try:
+            await conn.execute(_STUCK_SQL_SQLITE if USE_SQLITE else _STUCK_SQL_PG)
+        except Exception:
+            logger.exception("Stuck-session reaper failed (non-fatal)")
+
         rows = await conn.fetch(
             "SELECT id, topic, status, created_at FROM sessions "
             "ORDER BY created_at DESC LIMIT 20"

@@ -7,13 +7,19 @@ const BASE =
   (import.meta.env.PROD ? PROD_API_FALLBACK : "")
 
 export async function startResearch(topic) {
+  console.log("POST /research to:", `${BASE}/research`)
   const res = await fetch(`${BASE}/research`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ topic }),
   })
-  if (!res.ok) throw new Error(`startResearch failed: ${res.status}`)
-  return res.json()
+  if (!res.ok) {
+    const err = await res.text()
+    throw new Error(`POST /research failed ${res.status}: ${err}`)
+  }
+  const data = await res.json()
+  console.log("POST /research response:", data)
+  return data
 }
 
 export async function getReport(sessionId) {

@@ -26,13 +26,7 @@ export function useResearch() {
   const wsRef = useRef(null)
 
   const startResearch = useCallback(async (newTopic) => {
-    console.log("[research] start", { topic: newTopic })
-    console.log("[research] env", {
-      VITE_BACKEND_URL: import.meta.env.VITE_BACKEND_URL,
-      VITE_BACKEND_WS_URL: import.meta.env.VITE_BACKEND_WS_URL,
-      WS_BASE,
-      PROD: import.meta.env.PROD,
-    })
+    console.log("WS_BASE:", WS_BASE)
     setState("running")
     setEvents([])
     setReport(null)
@@ -43,30 +37,29 @@ export function useResearch() {
     let session
     try {
       session = await api.startResearch(newTopic)
-      console.log("[research] POST /research response:", session)
     } catch (e) {
-      console.error("[research] POST /research failed:", e)
+      console.error("POST /research failed:", e)
       setState("error")
       setErrorMsg(String(e.message || e))
       return
     }
     if (!session?.session_id) {
-      console.error("[research] no session_id in response, aborting WS open")
+      console.error("No session_id in response, aborting WS open")
       setState("error")
       setErrorMsg("Backend did not return a session_id")
       return
     }
+    console.log("session_id:", session.session_id)
     setSessionId(session.session_id)
 
     const wsUrl = `${WS_BASE}/ws/progress/${session.session_id}`
-    console.log("[research] opening WebSocket:", wsUrl)
+    console.log("Opening WebSocket:", wsUrl)
     const ws = new WebSocket(wsUrl)
     wsRef.current = ws
-    console.log("[research] WebSocket constructed, readyState:", ws.readyState)
 
-    ws.onopen = () => console.log("[research] WS open ✅", wsUrl)
+    ws.onopen = () => console.log("WebSocket OPENED ✅", wsUrl)
     ws.onclose = (e) =>
-      console.log("[research] WS close", { code: e.code, reason: e.reason, wasClean: e.wasClean })
+      console.log("WebSocket CLOSED:", e.code, e.reason)
 
     ws.onmessage = async (e) => {
       let event
@@ -97,7 +90,7 @@ export function useResearch() {
     }
 
     ws.onerror = (e) => {
-      console.error("[research] WS error ❌", e, "url:", wsUrl)
+      console.error("WebSocket ERROR ❌", e, "url:", wsUrl)
       setState("error")
       setErrorMsg("WebSocket connection failed")
     }
