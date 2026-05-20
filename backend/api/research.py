@@ -80,7 +80,7 @@ async def start_research(req: ResearchRequest, request: Request):
 
 
 @router.get("/report/{session_id}")
-async def get_report(session_id: str):
+async def get_report(session_id: str, request: Request):
     pool = get_pool()
     async with pool.acquire() as conn:
         row = await conn.fetchrow(
@@ -115,7 +115,7 @@ async def get_report(session_id: str):
 
 
 @router.get("/report/{session_id}/pdf")
-async def get_report_pdf(session_id: str):
+async def get_report_pdf(session_id: str, request: Request):
     pool = get_pool()
     async with pool.acquire() as conn:
         row = await conn.fetchrow(
@@ -160,7 +160,7 @@ _STUCK_SQL_PG = (
 
 
 @router.get("/history")
-async def get_history():
+async def get_history(request: Request):
     pool = get_pool()
     async with pool.acquire() as conn:
         try:
