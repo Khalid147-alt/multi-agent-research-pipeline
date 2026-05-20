@@ -24,8 +24,8 @@ export default function ConfidenceChart({ sections }) {
       <div className="text-xs uppercase tracking-wider text-muted mb-3">
         Confidence per section
       </div>
-      <ResponsiveContainer width="100%" height={Math.max(150, 40 * data.length)}>
-        <BarChart data={data} layout="vertical" margin={{ left: 10, right: 30 }}>
+      <ResponsiveContainer width="100%" height={Math.max(180, 44 * data.length)}>
+        <BarChart data={data} layout="vertical" margin={{ left: 4, right: 24, top: 4, bottom: 4 }}>
           <CartesianGrid stroke="#1f1f2a" strokeDasharray="3 3" />
           <XAxis
             type="number"
@@ -35,8 +35,8 @@ export default function ConfidenceChart({ sections }) {
           <YAxis
             type="category"
             dataKey="name"
-            tick={{ fill: "#e5e7eb", fontSize: 12 }}
-            width={150}
+            tick={{ fill: "#e5e7eb", fontSize: 11 }}
+            width={110}
           />
           <Tooltip
             cursor={{ fill: "#1f1f2a" }}

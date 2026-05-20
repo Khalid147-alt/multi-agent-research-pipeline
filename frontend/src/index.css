@@ -8,10 +8,26 @@ body,
   height: 100%;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
   background: #0a0a0f;
   color: #e5e7eb;
+  line-height: 1.55;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Larger tap targets on touch devices without hurting cursor UX. */
+@media (hover: none) {
+  button,
+  a {
+    min-height: 44px;
+  }
 }
 
 ::-webkit-scrollbar {
@@ -27,4 +43,10 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #2a2a3a;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #1f1f2a #13131a;
 }

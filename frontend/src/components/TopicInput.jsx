@@ -28,25 +28,28 @@ export default function TopicInput({ onSubmit, disabled }) {
 
   return (
     <form onSubmit={handle} className="w-full">
-      <div className="relative">
+      {/* Stacked layout on mobile, overlay button on sm+ for that hero feel. */}
+      <div className="flex flex-col sm:relative gap-2 sm:gap-0">
         <input
           type="text"
           value={value}
           onChange={(e) => setValue(e.target.value)}
           placeholder={`e.g. ${EXAMPLES[placeholderIdx]}`}
           disabled={disabled}
-          className="w-full bg-panel border border-edge rounded-xl px-6 py-5 text-lg
+          maxLength={300}
+          className="w-full bg-panel border border-edge rounded-xl px-4 sm:px-6 py-4 sm:py-5 text-base sm:text-lg
                      placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent
-                     disabled:opacity-50 transition"
+                     disabled:opacity-50 transition sm:pr-36"
         />
         <motion.button
           type="submit"
           disabled={disabled || !value.trim()}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          className="absolute right-2 top-1/2 -translate-y-1/2 bg-accent hover:bg-blue-500
+          className="sm:absolute sm:right-2 sm:top-1/2 sm:-translate-y-1/2
+                     bg-accent hover:bg-blue-500
                      disabled:bg-edge disabled:cursor-not-allowed
-                     px-5 py-2.5 rounded-lg font-medium transition"
+                     px-5 py-3 sm:py-2.5 rounded-lg font-medium transition min-h-[44px]"
         >
           Research →
         </motion.button>

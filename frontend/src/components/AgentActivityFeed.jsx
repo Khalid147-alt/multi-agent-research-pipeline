@@ -20,7 +20,7 @@ const TYPE_COLOR = {
 
 export default function AgentActivityFeed({ events }) {
   return (
-    <div className="bg-panel border border-edge rounded-xl p-4 h-[420px] overflow-y-auto">
+    <div className="bg-panel border border-edge rounded-xl p-4 h-[320px] sm:h-[380px] lg:h-[420px] overflow-y-auto">
       <div className="text-xs uppercase tracking-wider text-muted mb-3">
         Live activity feed
       </div>
@@ -51,7 +51,7 @@ export default function AgentActivityFeed({ events }) {
                   )}
                 </div>
                 {(e.task || e.preview || e.tool || e.message) && (
-                  <div className="text-xs text-gray-400 mt-0.5 font-mono">
+                  <div className="text-xs text-gray-400 mt-0.5 font-mono break-words">
                     {e.tool && <span className="text-amber">{e.tool}: </span>}
                     {e.task || e.preview || e.message}
                   </div>
