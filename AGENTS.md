@@ -223,6 +223,24 @@ Vite proxies `/research`, `/report`, `/history`, `/health`, `/ws` to `:8000`, so
 
 ## Session log (append a one-line entry per work block)
 
+- **2026-05-20** — Production demo was broken. Real root cause was a missing
+  pip package: CrewAI 1.14.4's native `gemini/` provider imports `google-genai`
+  at runtime, but `requirements.huggingface.txt` only had the older
+  `google-generativeai` (langchain bridge). Every research run died on the
+  first `build_researcher()` call with `ImportError: Google Gen AI native
+  provider not available`. Added `google-genai>=1.0.0` to both requirements
+  files. Also fixed two latent bugs that made the failure look mysterious:
+  (1) replaced `BackgroundTasks` with `asyncio.create_task` so the worker
+  isn't tied to the request lifecycle on HF, and (2) added a `BaseException`
+  safety-net wrapper around `run_research` plus a stuck-session reaper in
+  `/history` that flips `running > 15 min` rows to `failed`. Frontend now
+  logs `POST /research to:`, `POST /research response:`, `WS_BASE:`,
+  `session_id:`, `Opening WebSocket:`, `WebSocket OPENED ✅`,
+  `WebSocket CLOSED:`, `WebSocket ERROR ❌` to make prod debugging quick.
+  E2E verified against the live stack: 4 agents finished in ~80s, real
+  cited HTML report returned. Repo pushed to
+  https://github.com/Khalid147-alt/multi-agent-research-pipeline (MIT,
+  with LICENSE, issue/PR templates, CODEOWNERS).
 - **2026-05-14** — Closed out Phases 6–8. Phase 6: E2E ran end-to-end against Gemini 2.5 Flash
   + Tavily, 4 agents finished and the report row landed in SQLite (PDF returns 503 locally as
   expected — no GTK on Windows). Fixed `main.py` to force UTF-8 stdout so CrewAI's emoji
