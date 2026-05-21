@@ -110,9 +110,12 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
 
+_resolved_origins = _allowed_origins()
+logger.info(f"CORS allow_origins resolved to: {_resolved_origins}")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=_allowed_origins(),
+    allow_origins=_resolved_origins,
     allow_origin_regex=None,
     allow_credentials=True,
     allow_methods=["GET", "POST", "OPTIONS"],
